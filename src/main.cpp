@@ -1,39 +1,47 @@
-// Blynk Settings
-#define BLYNK_TEMPLATE_ID "TMPL6Fj2fisKI"          // Ganti dengan Template ID dari Blynk
+// Blynk Settings - Replace with your details
+#define BLYNK_TEMPLATE_ID "TMPL6Fj2fisKI"
 #define BLYNK_TEMPLATE_NAME "tubesMiot"
 #define BLYNK_AUTH_TOKEN "DVkDquoJqQWyPBGYDS_j3-FqUFAfgb4E"
 
+// Include necessary libraries
 #include <WiFi.h>
+#include <Wire.h>
+#include <SPI.h>
 #include <BlynkSimpleEsp32.h>
 #include <LiquidCrystal_I2C.h>
 #include <ESP32Servo.h>
 
+// --- Function Prototypes ---
 void controlServo();
 void updateDisplay();
 void beepBuzzer();
 
-// WiFi credentials
+// --- Hardware & Network Credentials ---
 const char* ssid = "realme 13+ 5G";
 const char* password = "kinep2rizki";
 
-// Inisialisasi LCD dan Servo
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+// Pin Definitions
+#define SERVO_PIN 14     // Changed to pin 13 for the Servo
+#define BUZZER_PIN 25    // ESP32 pin for the buzzer
+
+// --- Global Variables ---
+String currentLockState = "TUTUP"; // Initial state of the lock
+
+// --- Object Initialization ---
+LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C LCD (address 0x27, 16 columns, 2 rows)
 Servo doorLockServo;
 
-// Pin
-#define SERVO_PIN 14
-#define BUZZER_PIN 25
-
-String currentLockState = "";
-
+//================================================================
+// SETUP FUNCTION
+//================================================================
 void setup() {
   Serial.begin(115200);
-  
+  Wire.begin(21, 22);  // Pastikan pin sesuai (SDA, SCL)
+
   pinMode(BUZZER_PIN, OUTPUT);
   doorLockServo.attach(SERVO_PIN);
-  doorLockServo.write(90); // posisi netral servo
 
-  lcd.init();
+  lcd.begin();         // GANTI dari lcd.init() ke lcd.begin()
   lcd.backlight();
   lcd.setCursor(0, 0);
   lcd.print("Connecting...");
@@ -41,45 +49,74 @@ void setup() {
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, password);
 
   lcd.clear();
-  lcd.print("Blynk Ready");
+  updateDisplay();
 }
 
-// Ketika V1 berubah dari Blynk app
-BLYNK_WRITE(V1) {
-  int pinValue = param.asInt();
-  if (pinValue == 1 && currentLockState != "BUKA") {
-    currentLockState = "BUKA";
-    controlServo();
-    updateDisplay();
-    beepBuzzer();
-  } else if (pinValue == 0 && currentLockState != "TUTUP") {
-    currentLockState = "TUTUP";
-    controlServo();
-    updateDisplay();
-    beepBuzzer();
-  }
-}
 
+//================================================================
+// MAIN LOOP
+//================================================================
 void loop() {
   Blynk.run();
 }
 
-void controlServo() {
-  if (currentLockState == "TUTUP") {
-    doorLockServo.write(0);
-  } else if (currentLockState == "BUKA") {
-    doorLockServo.write(90);
+//================================================================
+// BLYNK FUNCTIONS
+//================================================================
+BLYNK_WRITE(V1) {
+  int pinValue = param.asInt();
+
+  // Condition to open the lock
+  if (pinValue == 1 && currentLockState != "BUKA") {
+    currentLockState = "BUKA";
+    Serial.println("Received command: BUKA");
+    controlServo();
+    updateDisplay();
+    beepBuzzer();
+  }
+  // Condition to close the lock
+  else if (pinValue == 0 && currentLockState != "TUTUP") {
+    currentLockState = "TUTUP";
+    Serial.println("Received command: TUTUP");
+    controlServo();
+    updateDisplay();
+    beepBuzzer();
   }
 }
 
+//================================================================
+// CUSTOM FUNCTIONS
+//================================================================
+
+/**
+ * @brief Controls the servo motor directly (no relay).
+ */
+void controlServo() {
+  if (currentLockState == "TUTUP") {
+    doorLockServo.write(0);      // Rotate servo to 'locked' position
+  } else if (currentLockState == "BUKA") {
+    doorLockServo.write(180);     // Rotate servo to 'unlocked' position
+  }
+
+  delay(1000); // Allow time for servo to reach position
+}
+
+/**
+ * @brief Updates the LCD with the current lock status.
+ */
 void updateDisplay() {
-  // lcd.clear();
-  // lcd.setCursor(0, 0);
-  // lcd.print("Status:");
-  // lcd.setCursor(0, 1);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Status Pintu:");
+  lcd.setCursor(0, 1);
+  lcd.print(currentLockState);
+  Serial.print("Status updated to: ");
   Serial.println(currentLockState);
 }
 
+/**
+ * @brief Creates a short beep sound with the buzzer.
+ */
 void beepBuzzer() {
   digitalWrite(BUZZER_PIN, HIGH);
   delay(150);
