@@ -1,5 +1,5 @@
 // Blynk Settings - Replace with your details
-#define BLYNK_TEMPLATE_ID "TMPL6Fj2fisKI"
+#define BLYNK_TEMPLATE_ID "TMPL6Fj2fisKI" 
 #define BLYNK_TEMPLATE_NAME "tubesMiot"
 #define BLYNK_AUTH_TOKEN "DVkDquoJqQWyPBGYDS_j3-FqUFAfgb4E"
 
@@ -14,7 +14,6 @@
 // --- Function Prototypes ---
 void controlServo();
 void updateDisplay();
-void beepBuzzer();
 
 // --- Hardware & Network Credentials ---
 const char* ssid = "realme 13+ 5G";
@@ -72,7 +71,6 @@ BLYNK_WRITE(V1) {
     Serial.println("Received command: BUKA");
     controlServo();
     updateDisplay();
-    beepBuzzer();
   }
   // Condition to close the lock
   else if (pinValue == 0 && currentLockState != "TUTUP") {
@@ -80,7 +78,6 @@ BLYNK_WRITE(V1) {
     Serial.println("Received command: TUTUP");
     controlServo();
     updateDisplay();
-    beepBuzzer();
   }
 }
 
@@ -93,9 +90,9 @@ BLYNK_WRITE(V1) {
  */
 void controlServo() {
   if (currentLockState == "TUTUP") {
-    doorLockServo.write(0);      // Rotate servo to 'locked' position
+    doorLockServo.write(45);      // Rotate servo to 'locked' position
   } else if (currentLockState == "BUKA") {
-    doorLockServo.write(180);     // Rotate servo to 'unlocked' position
+    doorLockServo.write(135);     // Rotate servo to 'unlocked' position
   }
 
   delay(1000); // Allow time for servo to reach position
@@ -114,11 +111,3 @@ void updateDisplay() {
   Serial.println(currentLockState);
 }
 
-/**
- * @brief Creates a short beep sound with the buzzer.
- */
-void beepBuzzer() {
-  digitalWrite(BUZZER_PIN, HIGH);
-  delay(150);
-  digitalWrite(BUZZER_PIN, LOW);
-}
