@@ -21,7 +21,6 @@ const char* password = "kinep2rizki";
 
 // Pin Definitions
 #define SERVO_PIN 14     // Changed to pin 13 for the Servo
-#define BUZZER_PIN 25    // ESP32 pin for the buzzer
 
 // --- Global Variables ---
 String currentLockState = "TUTUP"; // Initial state of the lock
@@ -37,7 +36,6 @@ void setup() {
   Serial.begin(115200);
   Wire.begin(21, 22);  // Pastikan pin sesuai (SDA, SCL)
 
-  pinMode(BUZZER_PIN, OUTPUT);
   doorLockServo.attach(SERVO_PIN);
 
   lcd.begin();         // GANTI dari lcd.init() ke lcd.begin()
